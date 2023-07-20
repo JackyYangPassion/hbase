@@ -339,7 +339,7 @@ class RegionScannerImpl implements RegionScanner, Shipper, RpcCallback {
       // different column families. To do this, we toggle the keep progress flag on during calls
       // to the StoreScanner to ensure that any progress made thus far is not wiped away.
       scannerContext.setKeepProgress(true);
-      heap.next(results, scannerContext);
+      heap.next(results, scannerContext);//读取调用堆栈 消耗CPU 路径
       scannerContext.setKeepProgress(tmpKeepProgress);
 
       nextKv = heap.peek();
@@ -487,7 +487,7 @@ class RegionScannerImpl implements RegionScanner, Shipper, RpcCallback {
         // Check if rowkey filter wants to exclude this row. If so, loop to next.
         // Technically, if we hit limits before on this row, we don't need this call.
         if (filterRowKey(current)) {
-          incrementCountOfRowsFilteredMetric(scannerContext);
+          incrementCountOfRowsFilteredMetric(scannerContext);//TODO: 多年未解的PrefixFilter  问题一并解决？
           // early check, see HBASE-16296
           if (isFilterDoneInternal()) {
             return scannerContext.setScannerState(NextState.NO_MORE_VALUES).hasMoreValues();

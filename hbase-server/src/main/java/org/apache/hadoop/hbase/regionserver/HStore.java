@@ -1710,7 +1710,7 @@ public class HStore
     NavigableSet<byte[]> targetCols, long readPt) throws IOException {
     return scan.isReversed()
       ? new ReversedStoreScanner(this, scanInfo, scan, targetCols, readPt)
-      : new StoreScanner(this, scanInfo, scan, targetCols, readPt);
+      : new StoreScanner(this, scanInfo, scan, targetCols, readPt);//1. 为自己构造StoreScanner
   }
 
   /**

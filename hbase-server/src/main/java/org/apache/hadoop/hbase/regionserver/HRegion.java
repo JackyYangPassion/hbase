@@ -327,6 +327,8 @@ public class HRegion implements HeapSize, PropagatingConfigurationObserver, Regi
   private final ConcurrentHashMap<HashedBytes, RowLockContext> lockedRows =
     new ConcurrentHashMap<>();
 
+
+  // 基本架构抽象： RS <------ HRegion <------ HStore <------ StoreFile
   protected final Map<byte[], HStore> stores =
     new ConcurrentSkipListMap<>(Bytes.BYTES_RAWCOMPARATOR);
 

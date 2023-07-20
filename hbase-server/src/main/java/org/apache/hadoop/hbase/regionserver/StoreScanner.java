@@ -629,7 +629,18 @@ public class StoreScanner extends NonReversedNonLazyKeyValueScanner
         prevCell = cell;
         scannerContext.setLastPeekedCell(cell);
         topChanged = false;
-        ScanQueryMatcher.MatchCode qcode = matcher.match(cell);
+        ScanQueryMatcher.MatchCode qcode = matcher.match(cell);//此处返回的 qcode== 计算逻辑要讲明白
+        //TODO:
+        // 1. 如果 Get 指定列祖/列 则返回 INCLUDE_AND_SEEK_NEXT_ROW  调用ExplicitColumnTracker#checkVersions
+        // 2. 如果 Get 不指定     则返回 SEEK_NEXT_COL              调用ScanWildcardColumnTracker#checkVersions
+        // REF comment in ColumnTracker interface
+        // * Currently there are two different types of Store/Family-level queries.
+        // * <ul>
+        // * <li>{@link ExplicitColumnTracker} is used when the query specifies one or more column qualifiers
+        // * to return in the family.</li>
+        // * <li>{@link ScanWildcardColumnTracker} is used when no columns are explicitly specified.</li>
+        // * </ul>
+        // * <p>
         switch (qcode) {
           case INCLUDE:
           case INCLUDE_AND_SEEK_NEXT_ROW:
@@ -731,7 +742,10 @@ public class StoreScanner extends NonReversedNonLazyKeyValueScanner
             }
             break;
 
-          case SEEK_NEXT_COL:
+          case SEEK_NEXT_COL://此处为何qcode 一直返回 SEEK_NEXT_COL
+            //TODO: 通过什么方式可以不执行此处消耗CPU的逻辑？
+            // 基础架构组：改造原有数据结构，压力给到图引擎
+            // 图引擎：如何最小化修改 解决问题？ 通过查询更改验证
             seekOrSkipToNextColumn(cell);
             NextState stateAfterSeekNextColumn = needToReturn(outResult);
             if (stateAfterSeekNextColumn != null) {
@@ -830,7 +844,7 @@ public class StoreScanner extends NonReversedNonLazyKeyValueScanner
   }
 
   private void seekOrSkipToNextColumn(Cell cell) throws IOException {
-    if (!trySkipToNextColumn(cell)) {
+    if (!trySkipToNextColumn(cell)) {//此处根据火焰图 发现这个调用堆栈中占用CPU 很高，需要排查根因
       seekAsDirection(matcher.getKeyForNextColumn(cell));
     }
   }

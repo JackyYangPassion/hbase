@@ -137,13 +137,14 @@ public abstract class UserScanQueryMatcher extends ScanQueryMatcher {
     /*
      * STEP 2: check the number of versions needed. This method call returns SKIP, SEEK_NEXT_COL,
      * INCLUDE, INCLUDE_AND_SEEK_NEXT_COL, or INCLUDE_AND_SEEK_NEXT_ROW.
+     * 从此处进行：返回 INCLUDE_AND_SEEK_NEXT_ROW
      */
     matchCode = columns.checkVersions(cell, timestamp, typeByte, false);
     switch (matchCode) {
       case SKIP:
         return MatchCode.SKIP;
       case SEEK_NEXT_COL:
-        return MatchCode.SEEK_NEXT_COL;
+        return MatchCode.SEEK_NEXT_COL;//当不传递列名时候，则返回这个
       default:
         // It means it is INCLUDE, INCLUDE_AND_SEEK_NEXT_COL or INCLUDE_AND_SEEK_NEXT_ROW.
         assert matchCode == MatchCode.INCLUDE || matchCode == MatchCode.INCLUDE_AND_SEEK_NEXT_COL

@@ -147,7 +147,7 @@ public class KeyValueHeap extends NonReversedNonLazyKeyValueScanner
     if (this.current == null) {
       return scannerContext.setScannerState(NextState.NO_MORE_VALUES).hasMoreValues();
     }
-    InternalScanner currentAsInternal = (InternalScanner) this.current;
+    InternalScanner currentAsInternal = (InternalScanner) this.current;//通过小顶堆排序后，StoreScanner/SegmentScanner 等均可能被调用
     boolean moreCells = currentAsInternal.next(result, scannerContext);
     Cell pee = this.current.peek();
 
@@ -308,6 +308,8 @@ public class KeyValueHeap extends NonReversedNonLazyKeyValueScanner
           // If there is only one scanner left, we don't do lazy seek.
           seekResult = scanner.requestSeek(seekKey, forward, useBloom);
         } else {
+          //TODO:在这个 Get 查询生命周期中 围绕KeyValueHeap 构建Scanner 最小堆，然后进行逻辑判断执行
+          //ref: http://hbasefly.com/2016/12/21/hbase-getorscan/
           seekResult = NonLazyKeyValueScanner.doRealSeek(scanner, seekKey, forward);
         }
 

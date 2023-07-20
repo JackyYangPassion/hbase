@@ -56,7 +56,7 @@ public class ExplicitColumnTracker implements ColumnTracker {
    * Contains the list of columns that the ExplicitColumnTracker is tracking. Each ColumnCount
    * instance also tracks how many versions of the requested column have been returned.
    */
-  private final ColumnCount[] columns;
+  private final ColumnCount[] columns;//如果查询的时候 此处不为空，则通过checkVersions 返回include_adn_seek_next_row
   private int index;
   private ColumnCount column;
   /**

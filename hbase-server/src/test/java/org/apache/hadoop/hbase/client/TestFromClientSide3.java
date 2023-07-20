@@ -167,8 +167,155 @@ public class TestFromClientSide3 {
     }
   }
 
+  /**
+   * 验证线上实际场景问题
+   * @throws IOException
+   * @throws InterruptedException
+   */
   @Test
-  public void testScanAfterDeletingSpecifiedRow() throws IOException, InterruptedException {
+  public void testGetSpecifiedRowCPULoadBug() throws IOException, InterruptedException {
+    try (Table table = TEST_UTIL.createTable(tableName, new byte[][] { FAMILY })) {
+      //核心点是使用场景：将实际场景进行抽象，然后进行测试
+      //1. 创建表            只有CF:FAMILY=f QUALIFIER= byte[] EMPTY_BYTES = new byte[0];
+      //2. 业务读写场景       单Key 在MemeStore 中持续Update=put/get 长时间不Flush
+      //3. 业务流量并发操作    QPS = xxxx
+      TEST_UTIL.waitTableAvailable(tableName, WAITTABLE_MILLIS);
+      byte[] row = Bytes.toBytes("SpecifiedRow");
+      byte[] value0 = Bytes.toBytes("value_0");
+      byte[] value1 = Bytes.toBytes("value_1");
+
+//      Put put = new Put(row);
+//      put.addColumn(FAMILY, QUALIFIER, VALUE);
+//      table.put(put);
+//
+//
+//      Delete d = new Delete(row);
+//      table.delete(d);
+
+
+      Put put = new Put(row);
+      put.addColumn(FAMILY, null, value0);
+      table.put(put);
+
+
+      put = new Put(row);
+      put.addColumn(FAMILY, null, value1);
+      table.put(put);
+
+      put = new Put(row);
+      put.addColumn(FAMILY, null, Bytes.toBytes("value_2"));
+      table.put(put);
+
+
+      //测试Flush 之前的 Get 读取逻辑
+      //Result res = table.get(new Get(row).addColumn(FAMILY, null));
+      Result res = table.get(new Get(row));
+      assertEquals(1, res.size());
+
+      //测试Flush 之后的读取逻辑
+//      TEST_UTIL.getAdmin().flush(tableName);
+//      List<Cell> cells = toList(table.getScanner(new Scan()));
+//      cells = toList(table.getScanner(new Scan()));
+//      assertEquals(1, cells.size());
+//      assertEquals("value_1", Bytes.toString(CellUtil.cloneValue(cells.get(0))));
+//
+//      cells = toList(table.getScanner(new Scan().addFamily(FAMILY)));
+//      assertEquals(1, cells.size());
+//      assertEquals("value_1", Bytes.toString(CellUtil.cloneValue(cells.get(0))));
+//
+//      cells = toList(table.getScanner(new Scan().addColumn(FAMILY, QUALIFIER)));
+//      assertEquals(0, cells.size());
+    }
+  }
+
+  /**
+   * 跟读源码：
+   * 1. 理解读取链路 get/Scan 流程基本原理
+   * 2. 理解写入链路关键步骤
+   * @throws IOException
+   * @throws InterruptedException
+   */
+  @Test
+  public void testGetPutFlow() throws IOException, InterruptedException {
+    try (Table table = TEST_UTIL.createTable(tableName, new byte[][] { FAMILY })) {
+
+      TEST_UTIL.waitTableAvailable(tableName, WAITTABLE_MILLIS);
+      byte[] row = Bytes.toBytes("SpecifiedRow");
+      byte[] value0 = Bytes.toBytes("value_0");
+      byte[] value1 = Bytes.toBytes("value_1");
+      byte[] value2 = Bytes.toBytes("value_2");
+
+      Put put = new Put(row);
+      put.addColumn(FAMILY, null, value0);
+      table.put(put);
+
+      put = new Put(row);
+      put.addColumn(FAMILY, null, value1);
+      table.put(put);
+
+      put = new Put(row);
+      put.addColumn(FAMILY, null, value2);
+      table.put(put);
+
+      //测试Flush 之前的 Get 读取逻辑
+      //Result res = table.get(new Get(row).addColumn(FAMILY, null));
+      Result res = table.get(new Get(row));
+
+      assertEquals(1, res.size());
+
+      //测试Flush 之后的读取逻辑
+      //      TEST_UTIL.getAdmin().flush(tableName);
+      //      List<Cell> cells = toList(table.getScanner(new Scan()));
+      //      cells = toList(table.getScanner(new Scan()));
+      //      assertEquals(1, cells.size());
+      //      assertEquals("value_1", Bytes.toString(CellUtil.cloneValue(cells.get(0))));
+      //
+      //      cells = toList(table.getScanner(new Scan().addFamily(FAMILY)));
+      //      assertEquals(1, cells.size());
+      //      assertEquals("value_1", Bytes.toString(CellUtil.cloneValue(cells.get(0))));
+      //
+      //      cells = toList(table.getScanner(new Scan().addColumn(FAMILY, QUALIFIER)));
+      //      assertEquals(0, cells.size());
+    }
+  }
+
+  @Test
+  public void testScanAfterDeletingSpecifiedRowCPULoadBugV2() throws IOException, InterruptedException {
+    try (Table table = TEST_UTIL.createTable(tableName, new byte[][] { FAMILY })) {
+      TEST_UTIL.waitTableAvailable(tableName, WAITTABLE_MILLIS);
+      byte[] row = Bytes.toBytes("SpecifiedRow");
+      byte[] value0 = Bytes.toBytes("value_0");
+      byte[] value1 = Bytes.toBytes("value_1");
+
+      Put put = new Put(row);
+      put.addColumn(FAMILY, QUALIFIER, VALUE);
+      table.put(put);
+
+
+      Delete d = new Delete(row);
+      table.delete(d);
+
+      //对照组 QUALIFIER 非空
+      put = new Put(row);
+      put.addColumn(FAMILY, QUALIFIER, value0);
+      table.put(put);
+      put = new Put(row);
+      put.addColumn(FAMILY, QUALIFIER, value1);
+      table.put(put);
+      put = new Put(row);
+      put.addColumn(FAMILY, QUALIFIER, Bytes.toBytes("value_2"));
+      table.put(put);
+      //测试Flush 之前的 Get 读取逻辑
+      Result res = table.get(new Get(row));
+      assertEquals(1, res.size());
+
+    }
+  }
+
+
+
+  @Test
+  public void testGetAfterDeletingSpecifiedRow() throws IOException, InterruptedException {
     try (Table table = TEST_UTIL.createTable(tableName, new byte[][] { FAMILY })) {
       TEST_UTIL.waitTableAvailable(tableName, WAITTABLE_MILLIS);
       byte[] row = Bytes.toBytes("SpecifiedRow");
@@ -209,6 +356,8 @@ public class TestFromClientSide3 {
       assertEquals(0, cells.size());
     }
   }
+
+
 
   @Test
   public void testScanAfterDeletingSpecifiedRowV2() throws IOException, InterruptedException {
@@ -1005,6 +1154,61 @@ public class TestFromClientSide3 {
 
   @Test
   public void testPutThenGetWithMultipleThreads() throws Exception {
+    final int THREAD_NUM = 20;
+    final int ROUND_NUM = 10;
+    for (int round = 0; round < ROUND_NUM; round++) {
+      ArrayList<Thread> threads = new ArrayList<>(THREAD_NUM);
+      final AtomicInteger successCnt = new AtomicInteger(0);
+      try (Table ht = TEST_UTIL.createTable(tableName, FAMILY)) {
+        TEST_UTIL.waitTableAvailable(tableName, WAITTABLE_MILLIS);
+
+        for (int i = 0; i < THREAD_NUM; i++) {
+          final int index = i;
+          Thread t = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+              final byte[] row = Bytes.toBytes("row-" + index);
+              final byte[] value = Bytes.toBytes("v" + index);
+              try {
+                Put put = new Put(row);
+                put.addColumn(FAMILY, QUALIFIER, value);
+                ht.put(put);
+                Get get = new Get(row);
+                Result result = ht.get(get);
+                byte[] returnedValue = result.getValue(FAMILY, QUALIFIER);
+                if (Bytes.equals(value, returnedValue)) {
+                  successCnt.getAndIncrement();
+                } else {
+                  LOG.error("Should be equal but not, original value: " + Bytes.toString(value)
+                    + ", returned value: "
+                    + (returnedValue == null ? "null" : Bytes.toString(returnedValue)));
+                }
+              } catch (Throwable e) {
+                // do nothing
+              }
+            }
+          });
+          threads.add(t);
+        }
+        for (Thread t : threads) {
+          t.start();
+        }
+        for (Thread t : threads) {
+          t.join();
+        }
+        assertEquals("Not equal in round " + round, THREAD_NUM, successCnt.get());
+      }
+      TEST_UTIL.deleteTable(tableName);
+    }
+  }
+
+  /**
+   * 测试验证读写链路源码阅读
+   * @throws Exception
+   */
+  @Test
+  public void testPutThenGetWithMultipleThreadsWithoutColum() throws Exception {
     final int THREAD_NUM = 20;
     final int ROUND_NUM = 10;
     for (int round = 0; round < ROUND_NUM; round++) {

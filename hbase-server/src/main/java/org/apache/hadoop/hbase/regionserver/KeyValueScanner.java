@@ -28,6 +28,7 @@ import org.apache.yetus.audience.InterfaceAudience;
 
 /**
  * Scanner that returns the next KeyValue.
+ * KeyWords: 此接口 主要包含了操作 读取指针以及迭代器的动作
  */
 @InterfaceAudience.Private
 // TODO: Change name from KeyValueScanner to CellScanner only we already have a simple CellScanner
@@ -43,6 +44,7 @@ public interface KeyValueScanner extends Shipper, Closeable {
   /**
    * Look at the next Cell in this scanner, but do not iterate scanner. NOTICE: The returned cell
    * has not been passed into ScanQueryMatcher. So it may not be what the user need.
+   * KeyWords: ScanQueryMatcher 根据用户查询条件进行过滤
    * @return the next Cell
    */
   Cell peek();

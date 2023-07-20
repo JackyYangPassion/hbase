@@ -206,6 +206,9 @@ public class KeyValue implements ExtendedCell, Cloneable {
    * change if item is removed or moved. Do our own codes.
    */
   public static enum Type {
+    //你是一个HBase 专家，请讲解以下枚举值的作用与区别
+    
+
     Minimum((byte) 0),
     Put((byte) 4),
 

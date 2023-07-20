@@ -277,6 +277,11 @@ public abstract class ScanQueryMatcher implements ShipperListener {
    */
   public abstract boolean moreRowsMayExistAfter(Cell cell);
 
+  /**
+   * 此处持续返回 CELL 会造成CPU升高？
+   * @param cell
+   * @return
+   */
   public Cell getKeyForNextColumn(Cell cell) {
     // We aren't sure whether any DeleteFamily cells exist, so we can't skip to next column.
     // TODO: Current way disable us to seek to next column quickly. Is there any better solution?

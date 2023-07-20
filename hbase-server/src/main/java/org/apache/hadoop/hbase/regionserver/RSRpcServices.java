@@ -2511,6 +2511,11 @@ public class RSRpcServices extends HBaseRpcServicesBase<HRegionServer>
     }
   }
 
+  /**
+   * 接收客户端 RPC Get  请求并转换成 Scan 查询
+   * 1. 也就是平时的大道理：get 就是Scan
+   * 2. TODO: Get 既然是特殊的 Scan 监控指标是如何分开的？
+   */
   private Result get(Get get, HRegion region, RegionScannersCloseCallBack closeCallBack,
     RpcCallContext context) throws IOException {
     region.prepareGet(get);
@@ -2534,7 +2539,7 @@ public class RSRpcServices extends HBaseRpcServicesBase<HRegionServer>
     RegionScannerImpl scanner = null;
     try {
       scanner = region.getScanner(scan);
-      scanner.next(results);
+      scanner.next(results);//TODO：此处火焰图为什么分叉<RegionScannerImpl.next ------ HRegion.getScanner>
     } finally {
       if (scanner != null) {
         if (closeCallBack == null) {
@@ -2557,7 +2562,7 @@ public class RSRpcServices extends HBaseRpcServicesBase<HRegionServer>
     if (region.getCoprocessorHost() != null) {
       region.getCoprocessorHost().postGet(get, results);
     }
-    region.metricsUpdateForGet(results, before);
+    region.metricsUpdateForGet(results, before);//Get 指标埋点位置
 
     return Result.create(results, get.isCheckExistenceOnly() ? !results.isEmpty() : null, stale);
   }

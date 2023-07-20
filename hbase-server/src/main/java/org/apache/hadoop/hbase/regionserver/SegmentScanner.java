@@ -30,6 +30,7 @@ import org.apache.yetus.audience.InterfaceAudience;
 
 /**
  * A scanner of a single memstore segment.
+ * KeyWords: SegmentScanner 为MemStore 实现的Scanner 查询
  */
 @InterfaceAudience.Private
 public class SegmentScanner implements KeyValueScanner {
